@@ -1,0 +1,78 @@
+services:
+  - type: web
+    name: enterprise-ai-agent-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: APP_NAME
+        value: Enterprise AI Service Desk
+
+      - key: ENVIRONMENT
+        value: production
+
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: enterprise-ai-agent-db
+          property: connectionString
+
+      - key: REDIS_URL
+        fromService:
+          name: enterprise-ai-agent-cache
+          type: keyvalue
+          property: connectionString
+
+      - key: RATE_LIMIT_STORAGE_URI
+        fromService:
+          name: enterprise-ai-agent-cache
+          type: keyvalue
+          property: connectionString
+
+      - key: CHROMA_PATH
+        value: /tmp/chroma
+
+      - key: LLM_PROVIDER
+        value: groq
+
+      - key: GROQ_API_KEY
+        sync: false
+
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+
+      - key: MAX_MESSAGE_LENGTH
+        value: "1000"
+
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "20"
+
+      - key: CORS_ORIGINS
+        value: "*"
+
+      - key: LOG_LEVEL
+        value: INFO
+
+
+
+
+
+  - type: keyvalue
+    name: enterprise-ai-agent-cache
+    plan: free
+    region: frankfurt
+    maxmemoryPolicy: allkeys-lru
+    persistenceMode: off
+    ipAllowList: []
+
+databases:
+  - name: enterprise-ai-agent-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "16"

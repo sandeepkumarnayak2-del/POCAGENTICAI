@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Service Desk Agent</title>
+    <link rel="stylesheet" href="/ui/style.css">
+</head>
+
+
+<body>
+
+    <div class="app">
+
+        <header class="topbar">
+            <div>
+                <h1>IT Service Desk</h1>
+                <span class="subtitle">AI-powered internal support</span>
+            </div>
+
+            <div class="user-area">
+                <span id="userInfo"></span>
+                <button id="logoutBtn" class="secondary-btn hidden">Logout</button>
+            </div>
+        </header>
+
+        <!-- Login -->
+        <section id="loginSection" class="login-card">
+            <h2>Sign in</h2>
+            <p class="muted">Use your service desk account.</p>
+
+            <form id="loginForm">
+                <label for="username">Username</label>
+                <input id="username" type="text" placeholder="sandeep" required>
+
+                <label for="password">Password</label>
+                <input id="password" type="password" placeholder="Password" required>
+
+                <button type="submit" class="primary-btn">
+                    Sign in
+                </button>
+            </form>
+
+            <div id="loginError" class="error hidden"></div>
+
+        </section>
+
+        <!-- Main application -->
+        <main id="mainSection" class="hidden">
+
+            <div class="layout">
+
+                <!-- Chat -->
+                <section class="panel chat-panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <h2>AI Assistant</h2>
+                            <span class="status-dot"></span>
+                            <span class="muted">Online</span>
+                        </div>
+                    </div>
+
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="message assistant">
+                            <div class="message-label">Max</div>
+                            <div class="message-content">
+                                Hello! I can help with IT issues, internal documentation
+                                and service desk tickets.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="chatForm" class="chat-input">
+                        <textarea id="messageInput" rows="2" maxlength="1000" placeholder="Describe your IT issue..."
+                            required></textarea>
+
+                        <div class="chat-actions">
+                            <span id="charCount">0 / 1000</span>
+                            <button type="submit" id="sendBtn" class="primary-btn">
+                                Send
+                            </button>
+                        </div>
+                    </form>
+
+                </section>
+
+                <!-- Right side -->
+                <aside class="side-panel">
+
+                    <section class="panel">
+                        <div class="panel-header">
+                            <h2>My Tickets</h2>
+                            <button id="refreshTickets" class="small-btn">
+                                Refresh
+                            </button>
+                        </div>
+
+                        <div id="ticketsList" class="tickets-list">
+                            <p class="muted">No tickets loaded.</p>
+                        </div>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-header">
+                            <h2>Pending Approvals</h2>
+                            <button id="refreshApprovals" class="small-btn">
+                                Refresh
+                            </button>
+                        </div>
+
+                        <div id="approvalsList">
+                            <p class="muted">No approvals loaded.</p>
+                        </div>
+                    </section>
+
+                </aside>
+
+            </div>
+
+            <!-- System information -->
+            <section class="panel system-panel">
+                <div class="panel-header">
+                    <h2>System</h2>
+                </div>
+
+                <div class="system-grid">
+                    <div>
+                        <span class="label">API</span>
+                        <span id="apiStatus">Checking...</span>
+                    </div>
+
+                    <div>
+                        <span class="label">Environment</span>
+                        <span id="environment">-</span>
+                    </div>
+
+                    <div>
+                        <span class="label">LLM</span>
+                        <span id="llmProvider">-</span>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="/ui/app.js"></script>
+</body>
+
+</html>

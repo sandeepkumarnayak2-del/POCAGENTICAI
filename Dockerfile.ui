@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY frontend ./frontend
+EXPOSE 10000
+CMD ["sh", "-c", "streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port ${PORT:-10000} --server.headless true --server.enableCORS false --server.enableXsrfProtection false"]
