@@ -6,12 +6,22 @@ from .utils import direct_route
 from app.observability.logging import logger
 from .schemas import RoutingDecision
 from app.llm.provider import SYSTEM
-
+from app.config import settings
 class SupervisorAgent(BaseAgent):
     name = "supervisor"
     def __init__(self, llm=None):
         super().__init__(llm=llm)
-        self.router = self.llm.with_structured_output(RoutingDecision, method="function_calling")
+
+        if settings.llm_provider.lower() == "ollama":
+             self.router = self.llm.with_structured_output(
+                RoutingDecision,
+                method="json_schema",
+            )
+        else:
+             self.router = self.llm.with_structured_output(
+                RoutingDecision,
+                 method="function_calling",
+            )
 
     def decide(self, message: str, conversation: str = "") -> dict[str, str]:
         direct = direct_route(message)

@@ -75,8 +75,10 @@ No ticket is created until approval is given.
 
 ## 6. Approval / rejection
 
-Approve or reject the pending action. Approval resumes the LangGraph checkpoint
-and executes the create-ticket MCP tool with an idempotency key.
+Approve or reject the pending action. The approval endpoint resumes the exact
+LangGraph checkpoint created by the Action Agent. Approval executes the stored
+create-ticket plan through MCP with an idempotency key; rejection executes the
+workflow's rejection node and creates no ticket.
 
 ## 7. Security
 

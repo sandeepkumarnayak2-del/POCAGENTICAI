@@ -13,8 +13,8 @@ from mcp.server.fastmcp import FastMCP
 from app.tools.tickets import list_tickets, get_ticket, create_ticket, serialize
 from app.observability.logging import logger
 
-MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
-MCP_PORT = int(os.getenv("MCP_PORT", "8001"))
+MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+MCP_PORT = int(os.getenv("PORT", os.getenv("MCP_PORT", "8001")))
 
 mcp = FastMCP(
     "enterprise-service-desk",

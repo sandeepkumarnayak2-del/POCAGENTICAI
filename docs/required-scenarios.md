@@ -26,9 +26,11 @@
 
 ## 6-8. Consequential Ticket + HITL
 - `Create a high priority ticket for my VPN problem.` -> Action Agent -> pending approval.
-- Approve -> resume LangGraph -> MCP `create_ticket_for_user`.
-- Reject -> approval becomes rejected; no ticket is created.
+- Approve -> `/approvals/{id}` resumes the original LangGraph checkpoint -> MCP `create_ticket_for_user`.
+- Reject -> `/approvals/{id}` resumes the same checkpoint -> approval becomes rejected; no ticket is created.
+- The stored Action Agent plan (title, description and priority) is executed unchanged after approval.
 - Creation uses `approval-{approval_id}` as an idempotency key.
+- The API does not hard-code ticket priority during approval resolution.
 
 ## Agentic LLM-only handoff
 For:
@@ -36,6 +38,10 @@ For:
 
 The graph can execute:
 `Supervisor -> Knowledge/RAG -> Investigation Agent -> Action Agent -> HITL`.
+
+The Knowledge Agent applies a conservative relevance gate before deciding that
+retrieved RAG evidence is sufficient. Generic IT words such as `failure`,
+`issue`, `problem`, and `authentication` are ignored for this handoff check.
 
 The Investigation Agent has **no internet/web-search tool**. It uses the existing LLM only and must not claim to have performed external research.
 

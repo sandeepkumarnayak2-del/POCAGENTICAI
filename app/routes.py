@@ -1,4 +1,3 @@
-import json
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -45,8 +44,7 @@ from app.security.validation import (
     sanitize_input,
 )
 from app.security.rate_limit import limiter
-from app.agents.graph import run_agent
-from app.mcp.client import call_tool_sync
+from app.agents.graph import run_agent, resume_agent
 from app.observability.logging import (
     configure_logging,
     logger,
@@ -351,7 +349,6 @@ def build_thread_id(
 # ---------------------------------------------------------
 
 @app.post("/chat")
-@limiter.limit("10/minute")
 async def chat(
     request: Request,
     chat_request: ChatRequest,
@@ -699,107 +696,61 @@ def resolve_approval(
     req: ApprovalRequest,
     user=Depends(current_user),
 ):
+    """Resolve the exact LangGraph approval checkpoint.
 
+    Execution is resumed through the same graph that created the approval. This
+    preserves the Action Agent's approved title, description and priority and
+    keeps the MCP call behind the HITL boundary.
+    """
     db = SessionLocal()
-
     try:
-
-        approval = db.get(
-            Approval,
-            approval_id,
-        )
-
+        approval = db.get(Approval, approval_id)
         if not approval:
-
-            raise HTTPException(
-                404,
-                "Approval not found",
-            )
+            raise HTTPException(404, "Approval not found")
 
         if (
             approval.username != user.username
-            and user.role not in (
-                "helpdesk",
-                "admin",
-            )
+            and user.role not in ("helpdesk", "admin")
         ):
-
-            raise HTTPException(
-                403,
-                "Not allowed",
-            )
+            raise HTTPException(403, "Not allowed")
 
         if approval.status != "pending":
+            return {"status": approval.status}
 
-            return {
-                "status": approval.status
-            }
-
-        # -------------------------------------------------
-        # Reject
-        # -------------------------------------------------
-
-        if not req.approve:
-
-            approval.status = "rejected"
-
-            db.commit()
-
-            audit(
-                user.id,
-                "approval_rejected",
-                str(approval.id),
-            )
-
-            return {
-                "status": "rejected"
-            }
-
-        # -------------------------------------------------
-        # Approve
-        # -------------------------------------------------
-
-        payload = json.loads(
-            approval.payload
-        )
-
-        title = "AI-created IT ticket"
-
-        description = payload["message"]
-
-        ticket = call_tool_sync(
-            "create_ticket_for_user",
-            {
-                "username": approval.username,
-                "role": user.role,
-                "title": title,
-                "description": description,
-                "priority": "high",
-                "idempotency_key": f"approval-{approval.id}",
-            },
-        )
-
-        if not isinstance(ticket, dict) or ticket.get("error"):
-            raise HTTPException(
-                status_code=502,
-                detail=f"MCP ticket creation failed: {ticket.get('error', 'invalid MCP response') if isinstance(ticket, dict) else 'invalid MCP response'}",
-            )
-
-        approval.status = "approved"
-
-        db.commit()
-
-        audit(
-            user.id,
-            "approval_approved",
-            str(approval.id),
-        )
-
-        return {
-            "status": "approved",
-            "ticket": ticket,
-        }
-
+        thread_id = approval.thread_id
+        if not thread_id:
+            raise HTTPException(409, "Approval has no workflow checkpoint")
     finally:
-
         db.close()
+
+    try:
+        result = resume_agent(thread_id, req.approve)
+    except Exception as exc:
+        logger.exception(
+            "approval_resume_failed",
+            approval_id=approval_id,
+            thread_id=thread_id,
+            approved=req.approve,
+            error_type=type(exc).__name__,
+        )
+        raise HTTPException(502, "Unable to resume the approval workflow") from exc
+
+    db = SessionLocal()
+    try:
+        approval = db.get(Approval, approval_id)
+        status = approval.status if approval else "unknown"
+
+        audit_action = "approval_approved" if req.approve else "approval_rejected"
+        audit(user.id, audit_action, str(approval_id))
+
+        response = {
+            "status": status,
+            "response": result.get("response", ""),
+        }
+        action = result.get("action") or {}
+        if action.get("ticket"):
+            response["ticket"] = action["ticket"]
+        return response
+    finally:
+        db.close()
+

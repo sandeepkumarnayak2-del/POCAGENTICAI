@@ -42,7 +42,7 @@ Recall Long-term Memory
 - **KnowledgeAgent**: enterprise IT knowledge and RAG. It can hand off when internal evidence is insufficient for an investigation request.
 - **InvestigationAgent**: LLM-only analysis after a knowledge handoff. It has **no internet/search tool** and must not claim external verification.
 - **TicketAgent**: reads existing tickets through MCP and respects authenticated identity/role.
-- **ActionAgent**: prepares consequential ticket actions. It never executes them directly.
+- **ActionAgent**: prepares consequential ticket actions. It never executes them directly. The stored plan is resumed through the HITL checkpoint only after approval.
 - **GeneralAgent**: handles greetings and general non-service-desk questions.
 
 ## Agentic handoff
