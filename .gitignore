@@ -12,7 +12,6 @@ __pycache__/
 *-shm
 *-wal
 
-data/
 .DS_Store
 app.zip
 docs.zip
