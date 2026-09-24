@@ -147,22 +147,28 @@ def has_relevant_docs(question: str, docs: list[dict]) -> bool:
 
 
 def action_requested(message: str) -> bool:
-    """Detect an explicit request to create/raise/open a ticket.
+    """Detect an explicit request to create/raise/open a ticket."""
 
-    Conditional wording is intentionally excluded. The Investigation Agent
-    must decide whether an action is needed.
-    """
-    text = " ".join(message.lower().split())
-    explicit_markers = (
-        "create a ticket",
-        "create ticket",
-        "prepare a ticket",
-        "raise a ticket",
-        "raise ticket",
-        "open a ticket",
-        "open ticket",
-        "submit a ticket",
-        "log a ticket",
-        "file a ticket",
+    text = message.lower()
+
+    action_verbs = (
+        "create",
+        "raise",
+        "open",
+        "submit",
+        "log",
+        "file",
     )
-    return any(marker in text for marker in explicit_markers)
+
+    ticket_markers = (
+        "ticket",
+        "helpdesk ticket",
+        "support ticket",
+        "it ticket",
+    )
+
+    return any(
+        verb in text and ticket in text
+        for verb in action_verbs
+        for ticket in ticket_markers
+    )

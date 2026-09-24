@@ -4,10 +4,16 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from .base import AgentResult, BaseAgent, clean_response
-from .utils import external_or_investigation_requested, has_relevant_docs, relevant_terms
 from app.rag.agentic import agentic_retrieve
 from app.llm.provider import SYSTEM
 from app.observability.logging import logger
+
+from .utils import (
+    external_or_investigation_requested,
+    has_relevant_docs,
+    relevant_terms,
+    action_requested,
+)
 
 class KnowledgeAgent(BaseAgent):
     name = "knowledge"
@@ -69,7 +75,10 @@ Focus on the CURRENT request."""),
                 )
 
                 handoff = None
-                if not relevant and investigation_requested:
+
+                if action_requested(message):
+                    handoff = "action"
+                elif not relevant and investigation_requested:
                     handoff = "investigation"
 
                 return AgentResult(
@@ -99,5 +108,10 @@ Focus on the CURRENT request."""),
                         action="rag_retrieval",
                     )
                 messages.append(ToolMessage(content=json.dumps(docs, default=str), tool_call_id=call["id"]))
-        handoff = "investigation" if not has_relevant_docs(message, all_docs) and external_or_investigation_requested(message) else None
+        if action_requested(message):
+            handoff = "action"
+        elif not has_relevant_docs(message, all_docs) and external_or_investigation_requested(message):
+            handoff = "investigation"
+        else:
+            handoff = None
         return AgentResult("I could not complete the knowledge search safely.", messages, {"documents": all_docs, "handoff": handoff})

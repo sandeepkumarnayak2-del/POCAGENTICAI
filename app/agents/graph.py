@@ -358,10 +358,17 @@ def route(
     }[state["agent"]]
 
 
-def route_after_knowledge(state: AgentState) -> Literal["investigation", "end"]:
-    """Hand off to Investigation when internal RAG evidence is insufficient."""
-    return "investigation" if state.get("handoff") == "investigation" else "end"
+def route_after_knowledge(
+    state: AgentState,
+    ) -> Literal["investigation", "plan_action", "end"]:
+    """Route KnowledgeAgent results to investigation or requested action."""
+    if state.get("handoff") == "action":
+        return "plan_action"
 
+    if state.get("handoff") == "investigation":
+        return "investigation"
+
+    return "end"
 
 def route_after_investigation(state: AgentState) -> Literal["plan_action", "end"]:
     """Only proceed to consequential planning when action is requested."""
@@ -400,13 +407,14 @@ def build_graph():
     # Agent-to-agent handoff: Knowledge -> Investigation when internal
     # evidence is insufficient. Investigation uses the LLM only; no web tool.
     builder.add_conditional_edges(
-        "knowledge",
-        route_after_knowledge,
-        {
-            "investigation": "investigation",
-            "end": END,
-        },
-    )
+    "knowledge",
+    route_after_knowledge,
+    {
+        "investigation": "investigation",
+        "plan_action": "plan_action",
+        "end": END,
+    },
+)
 
     builder.add_conditional_edges(
         "investigation",
